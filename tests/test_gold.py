@@ -74,7 +74,8 @@ def test_parse_reply():
 def test_oracle_scores_full_marks(demo):
     if not demo.prebuilt:
         pytest.skip("gold answers are defined on the full-scale demo; run make demo")
-    p = subprocess.run([sys.executable, str(REPO / "eval" / "run.py"), "--oracle", "--db", str(demo.db), "--tag", "test"],
+    p = subprocess.run([sys.executable, str(REPO / "eval" / "run.py"), "--oracle", "--db", str(demo.db),
+                        "--tag", "test"],
                        capture_output=True, text=True, cwd=REPO, timeout=300)
     assert p.returncode == 0, p.stdout + p.stderr
     assert "overall 30/30" in p.stdout

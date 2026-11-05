@@ -107,6 +107,7 @@ def test_counts_not_values():
 
 
 BENIGN = [
+    "cases = {\"password\": lambda: make_one()}",
     "session 7c1e92d4-3f0a-4b6d-8e21-5a9fd0c47b13 at commit 4e8a1f6c9b2d7035e1a4c8f2b6d90e3a7c5f1b28",
     "tool id toolu_01HXQ4NwT7bzkp9R3DD2gs6j and msg_014DfpWQsYcXTgHQMKDSncZl req_012BZ7y9Sp4gGKld8wmFj2Xb",
     "/home/sam/.claude/projects/-home-sam-desktop-projects-2027-Hobby-Apps/a1c47e09.jsonl",

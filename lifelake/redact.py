@@ -69,7 +69,7 @@ PATTERNS: list[Pattern] = [
 
 # Values after "password=" that are code or placeholders, not secrets.
 _CODE_VALUE = re.compile(
-    r"^(?:[A-Za-z_][A-Za-z_.]*|\$[A-Za-z_{(].*|%.*|\*+|x+|X+|\.+|-+|null|none|true|false|undefined|"
+    r"^(?:[A-Za-z_][A-Za-z_.]*:?|\$[A-Za-z_{(].*|%.*|\*+|x+|X+|\.+|-+|null|none|true|false|undefined|"
     r"(?:os|process|self|settings|config|args|env|cfg|opts|options|params|req|request)\b.*)$",
     re.I)
 
