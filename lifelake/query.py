@@ -139,13 +139,13 @@ class SafeLake:
         lines = ["# Safe views (query as safe.<view>; nothing else is readable)", ""]
         for v in safe_views():
             n = self.con.execute(f"SELECT count(*) FROM safe.{v}").fetchone()[0]
-            lines.append(f"## safe.{v} ({n:,} rows) — {TABLE_NOTES.get(v, '')}")
+            lines.append(f"## safe.{v} ({n:,} rows): {TABLE_NOTES.get(v, '')}")
             for name, typ, *_ in self.con.execute(f"DESCRIBE safe.{v}").fetchall():
                 vals = self.con.execute(f'SELECT "{name}" v, count(*) n FROM safe.{v} WHERE "{name}" IS NOT NULL '
                                         f"GROUP BY 1 ORDER BY n DESC, v LIMIT 3").fetchall()
                 note = COLUMN_NOTES.get((v, name)) or DERIVED.get(name, "")
                 ex = ", ".join(repr(_short(x[0])) for x in vals)
-                lines.append(f"- {name} {typ}" + (f" — {note}" if note else "") + f" | e.g. {ex}")
+                lines.append(f"- {name} {typ}" + (f": {note}" if note else "") + f" | e.g. {ex}")
             lines.append("")
         return "\n".join(lines)
 

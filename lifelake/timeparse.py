@@ -77,7 +77,7 @@ def domain_of(url: str | None) -> str | None:
         return None
     if url.lower().startswith("mailto:"):
         return url[7:].split("@")[-1].lower().strip(">") or None
-    m = re.match(r"^[a-z][a-z0-9+.-]*://([^/:?#]+)", url, re.I)
+    m = re.match(r"^[a-z][a-z0-9+.-]*://(?:[^/?#]*@)?([^/:?#]+)", url, re.I)  # skips user:password@
     if not m:
         return None
     h = m.group(1).lower()

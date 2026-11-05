@@ -99,16 +99,16 @@ def main(argv=None) -> int:
             con.close()
         return 0
     from .query import Rejected, SafeLake, print_result
-    lake = SafeLake(cfg.db_path)
-    if a.cmd == "context":
-        print(lake.context())
-        return 0
-    try:
-        cols, rows = lake.run_sql(a.sql)
-    except Rejected as e:
-        print(f"REJECTED: {e}")
-        return 2
-    print_result(a.sql.strip(), cols, rows, a.limit)
+    with SafeLake(cfg.db_path) as lake:
+        if a.cmd == "context":
+            print(lake.context())
+            return 0
+        try:
+            cols, rows = lake.run_sql(a.sql)
+        except Rejected as e:
+            print(f"REJECTED: {e}")
+            return 2
+        print_result(a.sql.strip(), cols, rows, a.limit)
     return 0
 
 

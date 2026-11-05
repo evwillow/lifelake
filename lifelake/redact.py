@@ -14,6 +14,7 @@ import math
 import re
 from collections import Counter
 from dataclasses import dataclass
+from urllib.parse import unquote_plus
 
 MARK = "[REDACTED:{}]"
 _NR = r"(?!\[redacted)(?!\[REDACTED)"  # value must not already be a redaction marker
@@ -71,6 +72,10 @@ _CODE_VALUE = re.compile(
     r"^(?:[A-Za-z_][A-Za-z_.]*|\$[A-Za-z_{(].*|%.*|\*+|x+|X+|\.+|-+|null|none|true|false|undefined|"
     r"(?:os|process|self|settings|config|args|env|cfg|opts|options|params|req|request)\b.*)$",
     re.I)
+
+# Runs of URL characters holding a percent escape. A search URL encodes what was typed, and encoding hides a secret
+# from the patterns: "%3Dghp_..." has a word character on its left and "password%3D..." has no "=".
+_PCT_RUN = re.compile(r"[^\s\"'<>`]*%[0-9A-Fa-f]{2}[^\s\"'<>`]*")
 
 # --- entropy pass -----------------------------------------------------------------
 _CANDIDATE = re.compile(r"(?<![A-Za-z0-9_\-+])[A-Za-z0-9_\-+]{32,}={0,2}(?![A-Za-z0-9_\-+])")
@@ -148,6 +153,20 @@ def _apply(p: Pattern, text: str, counts: Counter) -> str:
     return "".join(out)
 
 
+def _decoded_pass(run: str, counts: Counter) -> str:
+    """Pass 1 over one percent-decoded run. A run with no hit is left exactly as it was."""
+    plain = unquote_plus(run)
+    if plain == run:
+        return run
+    found: Counter = Counter()
+    for p in PATTERNS:
+        plain = _apply(p, plain, found)
+    if not found:
+        return run
+    counts.update(found)
+    return plain
+
+
 def redact(text: str | None, counts: Counter | None = None, entropy: bool = True) -> str | None:
     """Return text with secrets replaced. Adds per-type hit counts to ``counts``."""
     if not text:
@@ -156,6 +175,8 @@ def redact(text: str | None, counts: Counter | None = None, entropy: bool = True
         counts = Counter()
     for p in PATTERNS:
         text = _apply(p, text, counts)
+    if "%" in text:
+        text = _PCT_RUN.sub(lambda m: _decoded_pass(m.group(0), counts), text)
     if entropy and len(text) >= 32:
         def ent(m: re.Match) -> str:
             if is_entropy_secret(m.group(0)):

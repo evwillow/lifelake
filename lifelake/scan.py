@@ -19,6 +19,11 @@ def _scan_batch(values: list[str]) -> Counter:
     return c
 
 
+def _batches(cur):
+    while rows := cur.fetchmany(BATCH):
+        yield [r[0] for r in rows]
+
+
 def text_columns(con) -> list[tuple[str, str]]:
     return con.execute("""
         SELECT table_name, column_name FROM information_schema.columns
@@ -33,12 +38,7 @@ def scan_lake(con, workers: int = 8) -> dict:
     with ProcessPoolExecutor(max_workers=workers, mp_context=mp.get_context("forkserver")) as pool:
         for table, col in text_columns(con):
             cur = con.execute(f'SELECT "{col}" FROM "{table}" WHERE "{col}" IS NOT NULL')
-
-            def batches():
-                while rows := cur.fetchmany(BATCH):
-                    yield [r[0] for r in rows]
-
-            for c in pool.map(_scan_batch, batches()):
+            for c in pool.map(_scan_batch, _batches(cur)):
                 if c:
                     by_type.update(c)
                     by_col[f"{table}.{col}"] += sum(c.values())

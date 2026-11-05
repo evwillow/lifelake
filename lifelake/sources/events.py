@@ -39,11 +39,16 @@ def event_row(counts: Counter, *, source: str, src_file: str, source_ref=None, t
               device: str | None = None, actor: str | None = None, context: str | None = None,
               text: str | None = None, url: str | None = None, payload: dict | None = None) -> dict:
     """Build one ``events`` row. Rows without a timestamp are kept with ts_utc NULL; nothing is dropped."""
-    context, text, url = redact(context, counts), redact(text, counts), redact(url, counts, entropy=False)
+    context, text, url = redact(context, counts), redact(text, counts), redact(url, counts)
+    ref = None if source_ref is None else redact(str(source_ref), counts)
+    device = redact(device, counts, entropy=False)  # opaque client ids are long by nature and are grouped on
     body = json.dumps(redact_obj(payload or {}, counts), default=str, ensure_ascii=False, sort_keys=True)
+    # A leaf alone can hide a secret that its key gives away ({"password": "..."}), so the dumped JSON gets the
+    # regex pass as well. Those patterns stop at quotes, so the result stays valid JSON.
+    body = redact(body, counts, entropy=False)
     key = f"{source}|{iso(ts)}|{text or ''}|{url or ''}|{body}"
     return {"event_id": hashlib.sha256(key.encode()).hexdigest()[:32], "source": source,
-            "source_ref": None if source_ref is None else str(source_ref), "ts_utc": ts, "local_ts": None, "tz": None,
+            "source_ref": ref, "ts_utc": ts, "local_ts": None, "tz": None,
             "device": device, "actor": actor, "context": context, "text": text, "url": url,
             "domain": domain_of(url), "payload": body, "src_file": src_file}
 
